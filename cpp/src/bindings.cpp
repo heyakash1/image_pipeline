@@ -49,7 +49,28 @@ py::array_t<uint8_t> to_grayscale(py::array_t<uint8_t>input){
     }
     return result;
 }
+
+py::array_t<uint8_t> threshold(py::array_t<uint8_t> input, uint8_t cutoff){
+    py::buffer_info buf = input.request();
+
+    uint8_t* pixels = reinterpret_cast<uint8_t*>(buf.ptr);
+    int height = buf.shape[0];
+    int width = buf.shape[1];
+
+    py::array_t<uint8_t>result({height,width});
+    uint8_t*outPixels = reinterpret_cast<uint8_t*>(result.request().ptr);
+
+    int iteration = height*width;
+    for(int i = 0;i<iteration;i++){
+        if(pixels[i] >= cutoff){
+            outPixels[i] = 255;
+        }
+        else    outPixels[i] = 0;
+    }
+    return result;
+}
 PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("invert", &invert, "Inverts a grayscale image");
     m.def("to_grayscale", &to_grayscale, "Converts an RGB image to grayscale");
+    m.def("threshold", &threshold, "Applies binary thresholding to a grayscale image");
 }

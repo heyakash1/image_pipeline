@@ -25,16 +25,18 @@ if original_img.dtype != np.uint8:
 # Grayscale conversion now happens in C++
 gray = image_pipeline_cpp.to_grayscale(original_img[:, :, :3])
 inverted_img = image_pipeline_cpp.invert(gray)
+thresholded_img = image_pipeline_cpp.threshold(gray,128)
 
 # --- Run through C++ ---------------------------------------------------
 # inverted_img = image_pipeline_cpp.invert(gray)
 
 # --- Visualize ----------------------------------------------------------
-fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+fig, axes = plt.subplots(1, 4, figsize=(14, 5))
 for ax, img, title in [
     (axes[0], original_img, "Original Image"),
     (axes[1], gray, "Grayscale (C++)"),
     (axes[2], inverted_img, "Inverted (C++)"),
+    (axes[3], thresholded_img, "Thresholded (C++)"),
 ]:
     ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
     ax.set_title(title)
