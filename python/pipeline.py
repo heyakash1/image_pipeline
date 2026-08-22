@@ -19,18 +19,24 @@ if original_img.dtype != np.uint8:
     original_img = (original_img * 255).astype(np.uint8)
 
 # --- Grayscale conversion (Phase 1 stopgap; C++ will own this later) --
-gray = original_img[:, :, :3].mean(axis=2).astype(np.uint8)
+# gray = original_img[:, :, :3].mean(axis=2).astype(np.uint8)
 
-# --- Run through C++ ---------------------------------------------------
+
+# Grayscale conversion now happens in C++
+gray = image_pipeline_cpp.to_grayscale(original_img[:, :, :3])
 inverted_img = image_pipeline_cpp.invert(gray)
 
+# --- Run through C++ ---------------------------------------------------
+# inverted_img = image_pipeline_cpp.invert(gray)
+
 # --- Visualize ----------------------------------------------------------
-fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-for ax, img, title, cmap in [
-    (axes[0], original_img, "Original Image", None),
-    (axes[1], inverted_img, "Inverted by C++", "gray"),
+fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+for ax, img, title in [
+    (axes[0], original_img, "Original Image"),
+    (axes[1], gray, "Grayscale (C++)"),
+    (axes[2], inverted_img, "Inverted (C++)"),
 ]:
-    ax.imshow(img, cmap=cmap)
+    ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
     ax.set_title(title)
     ax.axis("off")
 
