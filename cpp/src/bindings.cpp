@@ -160,10 +160,49 @@ py::array_t<uint8_t> gaussian_blur(py::array_t<uint8_t>input, int kernel_size, d
     }
     return result;
 }
+
+py::array_t<uint8_t> sobel(py::array_t<uint8_t>input){
+    py::buffer_info buf = input.request();
+
+    uint8_t*pixels = reinterpret_cast<uint8_t*>(buf.ptr);
+    int height = buf.shape[0];
+    int width = buf.shape[1];
+
+    py::array_t<uint8_t>result({height,width});
+    uint8_t*outPixels = reinterpret_cast<uint8_t*>(result.request().ptr);
+
+    int Gx[9] = {-1,0,1,-2,0,2,-1,0,1};
+    int Gy[9] = {-1,-2,-1,0,0,0,1,2,1};
+
+    for(int row=0;row<height;row++){
+        for(int col=0;col<width;col++){
+            int sumx = 0;
+            int sumy = 0;
+            for(int dr=-1;dr<=1;dr++){
+                for(int dc=-1;dc<=1;dc++){
+                    int neighborRow = row+dr;
+                    int neighborCol = col+dc;
+                    neighborRow = clamp(neighborRow,0,height-1);
+                    neighborCol = clamp(neighborCol,0,width-1);
+
+                    int neighborVal = pixels[neighborRow*width + neighborCol];
+                    sumx += neighborVal * Gx[(dr+1)*3 + dc+1];
+                    sumy += neighborVal * Gy[(dr+1)*3 + dc+1];
+                }
+            }
+            int mag = sqrt(sumx*sumx + sumy*sumy);
+            mag = clamp(mag,0,255);
+            outPixels[row*width+col] = (uint8_t)mag;
+        }
+    }
+    return result;
+}
+
 PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("invert", &invert, "Inverts a grayscale image");
     m.def("to_grayscale", &to_grayscale, "Converts an RGB image to grayscale");
     m.def("threshold", &threshold, "Applies binary thresholding to a grayscale image");
     m.def("box_blur", &box_blur, "Applies a box blur to a grayscale image");
     m.def("gaussian_blur",&gaussian_blur, "Applies a Gaussian blur to a grayscale image");
+    m.def("sobel", &sobel, "Computes Sobel gradient magnitude of a grayscale image");
 }
