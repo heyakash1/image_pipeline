@@ -27,20 +27,24 @@ gray = image_pipeline_cpp.to_grayscale(original_img[:, :, :3])
 inverted_img = image_pipeline_cpp.invert(gray)
 thresholded_img = image_pipeline_cpp.threshold(gray,128)
 
-blurred_3 = image_pipeline_cpp.box_blur(gray,3)
-blurred_9 = image_pipeline_cpp.box_blur(gray,9)
-blurred_25 = image_pipeline_cpp.box_blur(gray,25)
+# blurred_3 = image_pipeline_cpp.box_blur(gray,3)
+# box9 = image_pipeline_cpp.box_blur(gray,9)
+# gauss9 = image_pipeline_cpp.gaussian_blur(gray,9,2.0)
+# blurred_25 = image_pipeline_cpp.box_blur(gray,25)
+gauss_big = image_pipeline_cpp.gaussian_blur(gray,25,8.0)
+# print("gray vs gauss9 identical?",np.array_equal(gray,gauss9))
+# print("max difference (gauss9):",np.max(np.abs(gray.astype(int)-gauss9.astype(int))))
 
+# print("max difference between box9 and gauss9:",np.max(np.abs(box9.astype(int)-gauss9.astype(int))))
 # print("gray vs blurred_2 identical?",np.array_equal(gray,blurred_3))
 # print("max difference: ",np.max(np.abs(gray.astype(int)-blurred_3.astype(int))))
-print("max difference (25*25): ",np.max(np.abs(gray.astype(int)-blurred_25.astype(int))))
+# print("max difference (25*25): ",np.max(np.abs(gray.astype(int)-blurred_25.astype(int))))
 # --- Visualize ----------------------------------------------------------
-fig, axes = plt.subplots(1, 4, figsize=(14, 5))
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 for ax, img, title in [
     (axes[0], gray, "Grayscale (C++)"),
-    (axes[1], blurred_3, "Blurred (3*3) (C++)"),
-    (axes[2], blurred_9, "Blurred (9*9) (C++)"),
-    (axes[3], blurred_25, "Blurred (25*25) (C++)"),
+    (axes[1], gauss_big, "Gaussian (25*25) (C++)"),
+    # (axes[3], blurred_25, "Blurred (25*25) (C++)"),
 ]:
     ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
     ax.set_title(title)
