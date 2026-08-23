@@ -203,6 +203,65 @@ std::pair<py::array_t<uint8_t>, py::array_t<double>> sobel(py::array_t<uint8_t>i
     return {result_mag,result_dir};
 }
 
+py::array_t<uint8_t> non_max_suppression(py::array_t<uint8_t> mag_input, py::array_t<double>dir_input){
+    py::buffer_info mag_buff = mag_input.request();
+    py::buffer_info dir_buff = dir_input.request();
+
+    uint8_t*mag = reinterpret_cast<uint8_t*>(mag_buff.ptr);
+    double*dir = reinterpret_cast<double*>(dir_buff.ptr);
+
+    int height = mag_buff.shape[0];
+    int width = mag_buff.shape[1];
+
+    py::array_t<uint8_t>result({height,width});
+
+    uint8_t*outPixels = reinterpret_cast<uint8_t*>(result.request().ptr);
+
+    for(int row=0;row<height;row++){
+        for(int col=0;col<width;col++){
+            int idx = row*width + col;
+
+            double degrees = dir[idx] * 180.0/M_PI;
+            if(degrees < 0)     degrees += 180;
+
+            int neighborRow1,neighborRow2;
+            int neighborCol1,neighborCol2;
+            if((degrees >=0 && degrees <=22.5) || degrees>=157.5 && degrees<=180){
+                neighborRow1 = row;
+                neighborCol1 = col-1;
+                neighborRow2 = row;
+                neighborCol2 = col+1;
+            }
+            else if(degrees >=22.5 && degrees <=67.5){
+                neighborRow1 = row-1;
+                neighborCol1 = col+1;
+                neighborRow2 = row+1;
+                neighborCol2 = col-1;
+            }
+            else if(degrees >=67.5 && degrees <=112.5){
+                neighborRow1 = row-1;
+                neighborCol1 = col;
+                neighborRow2 = row+1;
+                neighborCol2 = col;
+            }
+            else{
+                neighborRow1 = row-1;
+                neighborCol1 = col-1;
+                neighborRow2 = row+1;
+                neighborCol2 = col+1;
+            }
+            neighborRow1 = clamp(neighborRow1,0,height-1);
+            neighborCol1 = clamp(neighborCol1,0,width-1);
+            neighborRow2 = clamp(neighborRow2,0,height-1);
+            neighborCol2 = clamp(neighborCol2,0,width-1);
+            if(mag[idx]>=mag[neighborRow1*width + neighborCol1] && mag[idx]>=mag[neighborRow2*width + neighborCol2]){
+                outPixels[idx] = mag[idx];
+            }
+            else    outPixels[idx] = 0;
+        }
+    }
+    return result;
+}
 PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("invert", &invert, "Inverts a grayscale image");
     m.def("to_grayscale", &to_grayscale, "Converts an RGB image to grayscale");
@@ -210,4 +269,5 @@ PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("box_blur", &box_blur, "Applies a box blur to a grayscale image");
     m.def("gaussian_blur",&gaussian_blur, "Applies a Gaussian blur to a grayscale image");
     m.def("sobel", &sobel, "Computes Sobel gradient magnitude of a grayscale image");
+    m.def("non_max_suppression", &non_max_suppression, "Applies non-maximum suppression to thin sobel edges");
 }
