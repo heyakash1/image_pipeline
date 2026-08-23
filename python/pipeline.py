@@ -27,16 +27,20 @@ gray = image_pipeline_cpp.to_grayscale(original_img[:, :, :3])
 inverted_img = image_pipeline_cpp.invert(gray)
 thresholded_img = image_pipeline_cpp.threshold(gray,128)
 
-# --- Run through C++ ---------------------------------------------------
-# inverted_img = image_pipeline_cpp.invert(gray)
+blurred_3 = image_pipeline_cpp.box_blur(gray,3)
+blurred_9 = image_pipeline_cpp.box_blur(gray,9)
+blurred_25 = image_pipeline_cpp.box_blur(gray,25)
 
+# print("gray vs blurred_2 identical?",np.array_equal(gray,blurred_3))
+# print("max difference: ",np.max(np.abs(gray.astype(int)-blurred_3.astype(int))))
+print("max difference (25*25): ",np.max(np.abs(gray.astype(int)-blurred_25.astype(int))))
 # --- Visualize ----------------------------------------------------------
 fig, axes = plt.subplots(1, 4, figsize=(14, 5))
 for ax, img, title in [
-    (axes[0], original_img, "Original Image"),
-    (axes[1], gray, "Grayscale (C++)"),
-    (axes[2], inverted_img, "Inverted (C++)"),
-    (axes[3], thresholded_img, "Thresholded (C++)"),
+    (axes[0], gray, "Grayscale (C++)"),
+    (axes[1], blurred_3, "Blurred (3*3) (C++)"),
+    (axes[2], blurred_9, "Blurred (9*9) (C++)"),
+    (axes[3], blurred_25, "Blurred (25*25) (C++)"),
 ]:
     ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
     ax.set_title(title)

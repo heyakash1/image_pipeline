@@ -1,8 +1,47 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-
+#include <algorithm>
 namespace py = pybind11;
 
+int clamp(int value, int lo, int hi){
+    value = std::max(value,lo);
+    value = std::min(value,hi);
+
+    return value;
+}
+
+py::array_t<uint8_t> box_blur(py::array_t<uint8_t>input, int kernel_size){
+    py::buffer_info buf = input.request();
+
+    uint8_t* pixels = reinterpret_cast<uint8_t*>(buf.ptr);
+    int height = buf.shape[0];
+    int width = buf.shape[1];
+
+    py::array_t<uint8_t>result({height,width});
+
+    uint8_t*outPixels = reinterpret_cast<uint8_t*>(result.request().ptr);
+
+    int half = kernel_size/2;
+    for(int row=0;row<height;row++){
+        for(int col=0;col<width;col++){
+            int sum = 0;
+            for(int dr= -half;dr<=half;dr++){
+                for(int dc= -half;dc<=half;dc++){
+                    int neighborRow = row+dr;
+                    int neighborCol = col+dc;
+
+                    neighborRow = clamp(neighborRow,0,height-1);
+                    neighborCol = clamp(neighborCol,0,width-1);
+                    int neighborVal = pixels[neighborRow*width+neighborCol];
+                    sum += neighborVal;
+                }
+            }
+            sum /= (kernel_size*kernel_size);
+            outPixels[row*width+col] = sum;
+        }
+    }
+    return result;
+}
 py::array_t<uint8_t> invert(py::array_t<uint8_t> input){
     // body goes here
     py::buffer_info buf = input.request();
@@ -60,8 +99,8 @@ py::array_t<uint8_t> threshold(py::array_t<uint8_t> input, uint8_t cutoff){
     py::array_t<uint8_t>result({height,width});
     uint8_t*outPixels = reinterpret_cast<uint8_t*>(result.request().ptr);
 
-    int iteration = height*width;
-    for(int i = 0;i<iteration;i++){
+    int iterations = height*width;
+    for(int i = 0;i<iterations;i++){
         if(pixels[i] >= cutoff){
             outPixels[i] = 255;
         }
@@ -73,4 +112,5 @@ PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("invert", &invert, "Inverts a grayscale image");
     m.def("to_grayscale", &to_grayscale, "Converts an RGB image to grayscale");
     m.def("threshold", &threshold, "Applies binary thresholding to a grayscale image");
+    m.def("box_blur", &box_blur, "Applies a box blur to a grayscale image");
 }
