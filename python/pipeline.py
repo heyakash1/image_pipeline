@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
+import cv2
 # --- Bridge setup ---------------------------------------------------
 # Windows (3.8+) ignores PATH for locating DLL dependencies of C
 # extension modules, so we must explicitly whitelist MinGW's runtime
@@ -32,7 +32,7 @@ mag,direction = image_pipeline_cpp.sobel(blurred)
 
 thinned = image_pipeline_cpp.non_max_suppression(mag,direction)
 final_edges = image_pipeline_cpp.hysteresis_threshold(thinned,50,100)
-
+cv_edges = cv2.Canny(blurred,50,100)
 # print("mag non-zero pixels:",np.count_nonzero(mag))
 # print("thinned non-zero pixels:",np.count_nonzero(thinned))
 # print("thinned max value:",thinned.max())
@@ -51,16 +51,26 @@ final_edges = image_pipeline_cpp.hysteresis_threshold(thinned,50,100)
 #     ax.set_title(title)
 #     ax.axis("off")
 
-print("thinned non-zero:",np.count_nonzero(thinned))
-print("final_edges non-zero:",np.count_nonzero(final_edges))
-print("final_edges unique values:",np.unique(final_edges))
+# print("thinned non-zero:",np.count_nonzero(thinned))
+# print("final_edges non-zero:",np.count_nonzero(final_edges))
+# print("final_edges unique values:",np.unique(final_edges))
 
-plt.figure(figsize=(14,9))
-plt.imshow(final_edges,cmap="gray")
-plt.axis('off')
-plt.title("Final Canny-style edges")
+# plt.figure(figsize=(14,9))
+# plt.imshow(final_edges,cmap="gray")
+# plt.axis('off')
+# plt.title("Final Canny-style edges")
+# plt.show()
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 7))
+axes[0].imshow(final_edges, cmap="gray")
+axes[0].set_title("Your Canny")
+axes[0].axis("off")
+
+axes[1].imshow(cv_edges, cmap="gray")
+axes[1].set_title("OpenCV Canny")
+axes[1].axis("off")
+
 plt.show()
-
 # plt.figure(figsize=(10,6))
 # plt.imshow(thinned,cmap="gray")
 # plt.axis('off')
