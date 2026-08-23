@@ -28,14 +28,16 @@ inverted_img = image_pipeline_cpp.invert(gray)
 thresholded_img = image_pipeline_cpp.threshold(gray,128)
 
 blurred = image_pipeline_cpp.gaussian_blur(gray,5,1.5)
-edges = image_pipeline_cpp.sobel(blurred)
+mag,direction = image_pipeline_cpp.sobel(blurred)
 
+print("mag dtype:",mag.dtype,"shape:",mag.shape)
+print("direction dtype:",direction.dtype,"shape:",direction.shape)
 # --- Visualize ----------------------------------------------------------
 fig, axes = plt.subplots(1, 3, figsize=(14, 5))
 for ax, img, title in [
     (axes[0], gray, "Grayscale (C++)"),
     (axes[1], blurred, "Gaussian (25*25) (C++)"),
-    (axes[2], edges, "sobel gradient (C++)"),
+    (axes[2], mag, "sobel gradient (C++)"),
 ]:
     ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
     ax.set_title(title)
