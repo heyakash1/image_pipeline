@@ -4,6 +4,7 @@
 #include <cmath>
 #include <utility>
 #include <vector>
+#include <queue>
 namespace py = pybind11;
 
 int clamp(int value, int lo, int hi){
@@ -262,6 +263,68 @@ py::array_t<uint8_t> non_max_suppression(py::array_t<uint8_t> mag_input, py::arr
     }
     return result;
 }
+
+py::array_t<uint8_t>hysteresis_threshold(py::array_t<uint8_t>input, uint8_t low, uint8_t high){
+    py::buffer_info buf = input.request();
+
+    uint8_t*pixels = reinterpret_cast<uint8_t*>(buf.ptr);
+    int height = buf.shape[0];
+    int width = buf.shape[1];
+
+    py::array_t<uint8_t>result({height,width});
+    uint8_t*outPixels = reinterpret_cast<uint8_t*>(result.request().ptr);
+
+    std::queue<std::pair<int,int>>q;
+
+    for(int row=0;row<height;row++){
+        for(int col=0;col<width;col++){
+            int idx = row*width + col;
+
+            // strong
+            if(pixels[idx] >= high){
+                outPixels[idx] = 255;
+                q.push({row,col});
+            }
+            // weak
+            else if(pixels[idx]>=low){
+                outPixels[idx] = 128;
+            }
+            // none
+            else outPixels[idx] = 0;
+        }
+    }
+
+    // flood-fill
+    while(!q.empty()){
+        auto front = q.front();
+        q.pop();
+
+        int row = front.first;
+        int col = front.second;
+
+        for(int dr=-1;dr<=1;dr++){
+            for(int dc=-1;dc<=1;dc++){
+                int nRow = row + dr;
+                int nCol = col + dc;
+
+                if(nRow >=0 && nRow<height && nCol>=0 && nCol<width){
+                    int nIdx = nRow*width + nCol;
+    
+                    if(outPixels[nIdx]==128){
+                        outPixels[nIdx] = 255;
+                        q.push({nRow,nCol});
+                    }
+                }
+            }
+        }
+    }
+
+    int iterations = height*width;
+    for(int i=0;i<iterations;i++){
+        if(outPixels[i]==128)   outPixels[i] = 0;
+    }
+    return result;
+}
 PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("invert", &invert, "Inverts a grayscale image");
     m.def("to_grayscale", &to_grayscale, "Converts an RGB image to grayscale");
@@ -270,4 +333,5 @@ PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("gaussian_blur",&gaussian_blur, "Applies a Gaussian blur to a grayscale image");
     m.def("sobel", &sobel, "Computes Sobel gradient magnitude of a grayscale image");
     m.def("non_max_suppression", &non_max_suppression, "Applies non-maximum suppression to thin sobel edges");
+    m.def("hysteresis_threshold",&hysteresis_threshold, "Applies hysteresis thresholding to link edge segments");
 }

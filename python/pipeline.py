@@ -31,6 +31,7 @@ blurred = image_pipeline_cpp.gaussian_blur(gray,5,1.5)
 mag,direction = image_pipeline_cpp.sobel(blurred)
 
 thinned = image_pipeline_cpp.non_max_suppression(mag,direction)
+final_edges = image_pipeline_cpp.hysteresis_threshold(thinned,50,100)
 
 # print("mag non-zero pixels:",np.count_nonzero(mag))
 # print("thinned non-zero pixels:",np.count_nonzero(thinned))
@@ -38,19 +39,28 @@ thinned = image_pipeline_cpp.non_max_suppression(mag,direction)
 # print("mag dtype:",mag.dtype,"shape:",mag.shape)
 # print("direction dtype:",direction.dtype,"shape:",direction.shape)
 # --- Visualize ----------------------------------------------------------
-# fig, axes = plt.subplots(1, 4, figsize=(14, 5))
+# fig, axes = plt.subplots(1, 5, figsize=(14, 5))
 # for ax, img, title in [
 #     (axes[0], gray, "Grayscale (C++)"),
 #     (axes[1], blurred, "Gaussian (25*25) (C++)"),
 #     (axes[2], mag, "sobel gradient (C++)"),
 #     (axes[3], thinned, "non-maximum suppression (C++)"),
+#     (axes[4], final_edges, "hysteresis thresholding (C++)"),
 # ]:
 #     ax.imshow(img, cmap="gray" if img.ndim == 2 else None)
 #     ax.set_title(title)
 #     ax.axis("off")
 
+print("thinned non-zero:",np.count_nonzero(thinned))
+print("final_edges non-zero:",np.count_nonzero(final_edges))
+print("final_edges unique values:",np.unique(final_edges))
 
-plt.figure(figsize=(10,6))
-plt.imshow(thinned,cmap="gray")
+plt.figure(figsize=(14,9))
+plt.imshow(final_edges,cmap="gray")
 plt.axis('off')
+plt.title("Final Canny-style edges")
 plt.show()
+
+# plt.figure(figsize=(10,6))
+# plt.imshow(thinned,cmap="gray")
+# plt.axis('off')
