@@ -12,7 +12,7 @@ sys.path.append(r"C:\Users\akash\OneDrive\Desktop\image_pipeline\build")
 import image_pipeline_cpp
 
 # --- Load image -------------------------------------------------------
-IMAGE_PATH = "C:/Users/akash/OneDrive/Desktop/image_pipeline/text_image.jpg"
+IMAGE_PATH = "C:/Users/akash/OneDrive/Desktop/image_pipeline/test_image.jpg"
 original_img = plt.imread(IMAGE_PATH)
 
 if original_img.dtype != np.uint8:
