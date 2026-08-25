@@ -94,7 +94,9 @@ sigma = 2.0
 
 # loading image and the set-up
 import matplotlib.pyplot as plt
-path = "C:/Users/akash/OneDrive/Desktop/image_pipeline/test_image2.jpg"
+
+# don't load bigger images as it takes too long
+path = "C:/Users/akash/OneDrive/Desktop/image_pipeline/data/benchmark_test.jpg"
 original_img = plt.imread(path)
 
 if original_img.dtype != np.uint8:
