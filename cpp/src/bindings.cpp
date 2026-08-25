@@ -325,6 +325,61 @@ py::array_t<uint8_t>hysteresis_threshold(py::array_t<uint8_t>input, uint8_t low,
     }
     return result;
 }
+
+py::array_t<uint8_t> histogram_matching(py::array_t<uint8_t>input, py::array_t<uint8_t>reference){
+    py::buffer_info buf = input.request();
+    py::buffer_info buf_ref = reference.request();
+    int height = buf.shape[0];
+    int width = buf.shape[1];
+
+    int height_ref = buf_ref.shape[0];
+    int width_ref = buf_ref.shape[1];
+    uint8_t*pixels = reinterpret_cast<uint8_t*>(buf.ptr);
+    uint8_t*reference_pixels = reinterpret_cast<uint8_t*>(buf_ref.ptr);
+
+    py::array_t<uint8_t>result ({height,width});
+    uint8_t*out_pixels = reinterpret_cast<uint8_t*>(result.request().ptr);
+
+    std::vector<int>histogram(256,0);
+    std::vector<int>histogram_ref(256,0);
+    int iterations = height*width;
+    int iterations2 = height_ref*width_ref;
+    for(int i=0;i<iterations;i++){
+        histogram[pixels[i]] ++;
+    }
+    
+    for(int i=0;i<iterations2;i++){
+        histogram_ref[reference_pixels[i]]++;
+    }
+
+    std::vector<int>cdf(256,0);
+    cdf[0] = histogram[0];
+    std::vector<int>cdf_ref(256,0);
+    cdf_ref[0] = histogram_ref[0];
+    for(int i=1;i<256;i++){
+        cdf[i] = cdf[i-1] + histogram[i];
+        cdf_ref[i] = cdf_ref[i-1] + histogram_ref[i];
+    }
+
+    // mapping array
+    std::vector<uint8_t>lookup(256);
+    for(int v=0;v<256;v++){
+        int r_val = -1;
+        int mini = 1e9;
+        for(int r=0;r<256;r++){
+            if(mini > abs(cdf_ref[r]-cdf[v])){
+                mini = abs(cdf_ref[r]-cdf[v]);
+                r_val = r;
+            }
+        }
+        lookup[v] = r_val;
+    }
+
+    for(int i=0;i<iterations;i++){
+        out_pixels[i] = lookup[pixels[i]];
+    }
+    return result;
+}
 PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("invert", &invert, "Inverts a grayscale image");
     m.def("to_grayscale", &to_grayscale, "Converts an RGB image to grayscale");
@@ -334,4 +389,5 @@ PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("sobel", &sobel, "Computes Sobel gradient magnitude of a grayscale image");
     m.def("non_max_suppression", &non_max_suppression, "Applies non-maximum suppression to thin sobel edges");
     m.def("hysteresis_threshold",&hysteresis_threshold, "Applies hysteresis thresholding to link edge segments");
+    m.def("histogram_matching",&histogram_matching, "Matches the histogram of an image to a reference image");
 }
