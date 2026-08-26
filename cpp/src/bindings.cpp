@@ -14,6 +14,36 @@ int clamp(int value, int lo, int hi){
     return value;
 }
 
+std::pair<uint8_t,uint8_t>compute_adaptive_thresholds(py::array_t<uint8_t>mag_input){
+    py::buffer_info buf = mag_input.request();
+
+    uint8_t*pixels = reinterpret_cast<uint8_t*>(buf.ptr);
+    int height = buf.shape[0];
+    int width = buf.shape[1];
+
+    int n = height*width;
+    std::vector<int>pixel_values(n);
+    for(int i=0;i<n;i++){
+        pixel_values[i] = pixels[i];
+    }
+
+    std::sort(pixel_values.begin(),pixel_values.end());
+
+    float median;
+    if(n%2==0){
+        median = (pixel_values[n/2] + pixel_values[n/2-1])/2;
+    }
+    else{
+        median = pixel_values[n/2];
+    }
+
+    float low = std::max(0.0,0.66*median);
+    float high = std::min(255.0,1.33*median);
+    
+    return {(uint8_t)low,(uint8_t)high};
+}
+
+
 py::array_t<uint8_t> box_blur(py::array_t<uint8_t>input, int kernel_size){
     py::buffer_info buf = input.request();
 
@@ -390,4 +420,5 @@ PYBIND11_MODULE(image_pipeline_cpp, m) {
     m.def("non_max_suppression", &non_max_suppression, "Applies non-maximum suppression to thin sobel edges");
     m.def("hysteresis_threshold",&hysteresis_threshold, "Applies hysteresis thresholding to link edge segments");
     m.def("histogram_matching",&histogram_matching, "Matches the histogram of an image to a reference image");
+    m.def("compute_adaptive_thresholds", &compute_adaptive_thresholds, "Computes low/high hysteresis thresholds from the median gradient magnitude");
 }
